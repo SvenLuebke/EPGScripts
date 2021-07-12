@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use utf8;
 use strict;
@@ -56,7 +56,7 @@ qx{sed -i -e 383c'my \$tempfile="/tmp/xmltv.xml_temp8";' $path/imdbtask_8.pl} ;
 #Delete all files older $cachetime
 print STDERR "Deleting all Cached Files older then $cachetime Days\n";
 
-my $cachefolder = "$path/cache/" ;
+my $cachefolder = "/tmp/cache/";
 
 if ( !-d $cachefolder ) {
     mkdir $cachefolder or die "Failed to create path: $cachefolder";
@@ -73,7 +73,7 @@ while (readdir($cache)) {
 my $xmlfile=$ARGV[0];
 my $xmlout=$ARGV[1];
 
-my $xml_temp= "$path/temp/" ;
+my $xml_temp= "/tmp/imdb";
 
 if ( !-d $xml_temp ) {
     mkdir $xml_temp or die "Failed to create path: $xml_temp";
@@ -116,15 +116,15 @@ system "$path/status.sh destroy_scroll_area";
 
 print STDERR "Creating Index for Splitted Files\n";
 system"cp $xml_temp/workfile-00.xml $xml_temp/mappedfile-00.xml";
-qx{sed -i 's/workfile/mappedfile/g' "$xml_temp"mappedfile-00.xml};
+qx{sed -i 's/workfile/mappedfile/g' $xml_temp/mappedfile-00.xml};
 
 system "$path/status.sh setup_scroll_area";
 sleep(1);
 system "perl $path/prozes.pl & perl $path/worker1.pl & perl $path/worker2.pl";
 
-sub wait_for_worker { 
+sub wait_for_worker {
     my $thread = qx{ps ax};
-    if ($thread=~ m/imdb\/worker1/ || $thread=~ m/imdb\/worker2/ )  { 
+    if ($thread=~ m/imdb\/worker1/ || $thread=~ m/imdb\/worker2/ )  {
         sleep(4);
         wait_for_worker();
     }
@@ -143,7 +143,10 @@ sleep(1);
 
 
 print STDERR "Merging Splitted XML Files together\n";
-qx{xml_merge -o $xmlout "$xml_temp"mappedfile-00.xml};
+my $cmd_XMLmerge="xml_merge -o $xmlout $xml_temp/mappedfile-00.xml";
+
+print STDERR $0." tries to call" . $cmd_XMLmerge;
+qx{$cmd_XMLmerge};
 
 wait;
 
